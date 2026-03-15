@@ -56,17 +56,13 @@ export default function SignupPage() {
         avatar_url: null,
       });
 
-    if (profileError) {
-      console.error(profileError);
-    }
+   if (profileError) {
+  console.error("Profile insert error:", profileError.message);
+}
   }
   setLoading(false);
-  
-  setSuccess("Account created! Redirecting to login...");
+  setSuccess("Signup successful! Please check your email to verify your account.");
 
-  setTimeout(() => {
-  router.push("/auth/login");
-  }, 1500);
 };
 
   return (
