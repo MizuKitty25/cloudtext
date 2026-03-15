@@ -18,7 +18,7 @@ export default function SignupPage() {
     return /[A-Za-z]/.test(pw) && /[0-9]/.test(pw) && pw.length >= 6;
   }
 
-  const handleSignup = async (e: React.FormEvent) => {
+ const handleSignup = async (e: React.FormEvent) => {
   e.preventDefault();
   setError("");
   setSuccess("");
@@ -35,21 +35,29 @@ export default function SignupPage() {
 
   setLoading(true);
 
- const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/login`,
-  },
-});
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/login`,
+    },
+  });
+
   if (error) {
     setError(error.message);
     setLoading(false);
     return;
   }
+
+  // Check if user already exists (identities array will be empty)
+  if (data?.user?.identities?.length === 0) {
+    setError("This email is already registered. Please login or use a different email.");
+    setLoading(false);
+    return;
+  }
+
   setLoading(false);
   setSuccess("Signup successful! Please check your email to verify your account.");
-
 };
 
   return (
