@@ -47,7 +47,8 @@ export default function NotesPage() {
     setLoading(true);
 
     const { data, error } = await supabase
-      .from<Note>("notes")
+      .from("notes")
+      .select<Note>("id,title,content,inserted_at")
       .select("id,title,content,inserted_at")
       .eq("user_id", userId)
       .order("inserted_at", { ascending: false });
