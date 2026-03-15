@@ -39,28 +39,13 @@ export default function SignupPage() {
   email,
   password,
   options: {
-    emailRedirectTo: "https://YOUR-VERCEL-DOMAIN.vercel.app/auth/login",
+    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/login`,
   },
 });
   if (error) {
     setError(error.message);
     setLoading(false);
     return;
-  }
-
-  // create profile row
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: data.user.id,
-        username: email.split("@")[0],
-        avatar_url: null,
-      });
-
-   if (profileError) {
-  console.error("Profile insert error:", profileError.message);
-}
   }
   setLoading(false);
   setSuccess("Signup successful! Please check your email to verify your account.");
