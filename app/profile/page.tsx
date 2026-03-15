@@ -25,9 +25,9 @@ export default function ProfilePage() {
     if (newUsername !== undefined) profileData.username = newUsername;
     if (newAvatarUrl !== undefined) profileData.avatar_url = newAvatarUrl;
 
-    const { error } = await supabase
-      .from("profiles")
-      .upsert(profileData, { returning: "minimal" });
+   const { error } = await supabase
+  .from("profiles")
+  .upsert(profileData); // remove { returning: "minimal" }
 
     if (error) {
       console.error("Failed to upsert profile:", error);
