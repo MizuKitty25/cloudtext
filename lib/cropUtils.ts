@@ -1,4 +1,6 @@
-export const getCroppedImg = (imageSrc: string, pixelCrop: any): Promise<Blob> => {
+import { Area } from "react-easy-crop";
+
+export const getCroppedImg = (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
   const canvas = document.createElement("canvas");
   const img = new Image();
   img.src = imageSrc;

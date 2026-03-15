@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 
 function getInitialTheme() {
   if (typeof window !== "undefined" && window.localStorage) {
@@ -16,7 +17,7 @@ function getInitialTheme() {
 export default function ClientRoot({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState(getInitialTheme);
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,8 +25,9 @@ export default function ClientRoot({ children }: { children: React.ReactNode }) 
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  setMounted(true);
+}, []);
 
   const fetchUserProfile = async () => {
   const { data } = await supabase.auth.getUser();
@@ -67,6 +69,7 @@ useEffect(() => {
 
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setMenuOpen(false); // close menu whenever user changes
   }, [user]);
 

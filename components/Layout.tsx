@@ -17,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Only run this once, on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setMounted(true);
   }, []);
 

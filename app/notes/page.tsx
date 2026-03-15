@@ -63,6 +63,7 @@ export default function NotesPage() {
 
   useEffect(() => {
     if (!userId) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setNotes([]);
       return;
     }
