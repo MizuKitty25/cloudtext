@@ -11,6 +11,8 @@ type Note = {
   title: string;
   content: string;
   inserted_at: string;
+  updated_at: string;
+  pinned: boolean;
 };
 
 export default function NotesPage() {
@@ -31,9 +33,11 @@ export default function NotesPage() {
     const init = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
-      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-      });
+      const { data: listener } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setSession(session);
+        },
+      );
       subscription = listener.subscription;
     };
 
@@ -42,15 +46,50 @@ export default function NotesPage() {
     return () => subscription?.unsubscribe();
   }, []);
 
+  const timeAgo = (dateString: string) => {
+    const seconds = Math.floor(
+      (new Date().getTime() - new Date(dateString).getTime()) / 1000,
+    );
+
+    const intervals = [
+      { label: "year", seconds: 31536000 },
+      { label: "month", seconds: 2592000 },
+      { label: "day", seconds: 86400 },
+      { label: "hour", seconds: 3600 },
+      { label: "minute", seconds: 60 },
+    ];
+
+    for (const i of intervals) {
+      const count = Math.floor(seconds / i.seconds);
+      if (count > 0) {
+        return `${count} ${i.label}${count > 1 ? "s" : ""} ago`;
+      }
+    }
+
+    return "just now";
+  };
+
+  const togglePin = async (note: Note) => {
+    const { error } = await supabase
+      .from("notes")
+      .update({ pinned: !note.pinned })
+      .eq("id", note.id);
+
+    if (!error) {
+      fetchNotes();
+    }
+  };
+
   const fetchNotes = async () => {
     if (!userId) return;
     setLoading(true);
 
     const { data, error } = await supabase
-  .from("notes")
-  .select("id,title,content,inserted_at,user_id")
-  .eq("user_id", userId)
-  .order("inserted_at", { ascending: false });
+      .from("notes")
+      .select("id,title,content,inserted_at,updated_at,pinned,user_id")
+      .eq("user_id", userId)
+      .order("pinned", { ascending: false })
+      .order("updated_at", { ascending: false });
 
     if (error) {
       setError(error.message);
@@ -138,7 +177,7 @@ export default function NotesPage() {
       return;
     }
 
-    setNotes(prev => prev.filter(note => note.id !== id));
+    setNotes((prev) => prev.filter((note) => note.id !== id));
     setLoading(false);
   };
 
@@ -155,9 +194,14 @@ export default function NotesPage() {
     return (
       <div className="p-8 bg-white rounded shadow">
         <h1 className="text-3xl font-bold mb-4 text-zinc-900">Notes</h1>
-        <p className="text-zinc-700 mb-4">You must be logged in to use notes.</p>
+        <p className="text-zinc-700 mb-4">
+          You must be logged in to use notes.
+        </p>
         <div className="flex gap-3">
-          <Link href="/auth/login" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+          <Link
+            href="/auth/login"
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
             Login
           </Link>
           <Link
@@ -176,7 +220,9 @@ export default function NotesPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 p-6 bg-white rounded shadow">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900">Notes</h1>
-          <p className="text-sm text-gray-600">Create, edit, and manage your notes.</p>
+          <p className="text-sm text-gray-600">
+            Create, edit, and manage your notes.
+          </p>
         </div>
         <button
           type="button"
@@ -190,17 +236,34 @@ export default function NotesPage() {
       <div className="space-y-4">
         {notes.length === 0 ? (
           <Card className="p-6">
-            <p className="text-gray-600">No notes yet. Create your first note using the button above.</p>
+            <p className="text-gray-600">
+              No notes yet. Create your first note using the button above.
+            </p>
           </Card>
         ) : (
-          notes.map(note => (
-            <Card key={note.id} className="relative">
+          notes.map((note) => (
+            <Card
+              key={note.id}
+              className={`relative ${note.pinned ? "border-l-4 border-yellow-400" : ""}`}
+            >
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{note.title}</h2>
-                  <p className="mt-2 text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    {note.pinned && "📌"}
+                    {note.title}
+                  </h2>
+                  <p className="mt-2 text-gray-700 whitespace-pre-wrap">
+                    {note.content}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => togglePin(note)}
+                    className="rounded bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-700 hover:bg-yellow-100"
+                  >
+                    {note.pinned ? "Unpin" : "Pin"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => openModal(note)}
@@ -218,7 +281,7 @@ export default function NotesPage() {
                 </div>
               </div>
               <p className="mt-4 text-xs text-gray-500">
-                {new Date(note.inserted_at).toLocaleString()}
+                Last edited {timeAgo(note.updated_at)}
               </p>
             </Card>
           ))
@@ -243,19 +306,23 @@ export default function NotesPage() {
 
             <form onSubmit={handleSave} className="mt-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Title
+                </label>
                 <input
                   value={title}
-                  onChange={e => setTitle(e.target.value)}
+                  onChange={(e) => setTitle(e.target.value)}
                   className="mt-1 w-full rounded border px-3 py-2"
                   placeholder="Give your note a title"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Content</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Content
+                </label>
                 <textarea
                   value={content}
-                  onChange={e => setContent(e.target.value)}
+                  onChange={(e) => setContent(e.target.value)}
                   className="mt-1 w-full rounded border px-3 py-2 min-h-[120px]"
                   placeholder="Write your note here..."
                 />
@@ -274,7 +341,11 @@ export default function NotesPage() {
                   disabled={loading}
                   className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {loading ? "Saving…" : editingNote ? "Save changes" : "Create note"}
+                  {loading
+                    ? "Saving…"
+                    : editingNote
+                      ? "Save changes"
+                      : "Create note"}
                 </button>
               </div>
             </form>
