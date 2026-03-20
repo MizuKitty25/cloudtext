@@ -20,7 +20,6 @@ export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // get logged-in user
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getSession();
@@ -34,7 +33,7 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("notes")
       .select("id,title,content,inserted_at,updated_at,pinned")
-      .eq("user_id", userId) // only fetch current user
+      .eq("user_id", userId)
       .order("pinned", { ascending: false })
       .order("updated_at", { ascending: false })
       .limit(5);
@@ -51,15 +50,34 @@ export default function DashboardPage() {
   }, [session]);
 
   if (session === undefined) {
-    return <p className="p-8">Loading dashboard…</p>;
+    return (
+      <div className="p-8 bg-white rounded shadow">
+        <h1 className="text-3xl font-bold mb-4 text-zinc-900">Dashboard</h1>
+        <p className="text-zinc-700">Loading your dashboard…</p>
+      </div>
+    );
   }
 
   if (!session) {
     return (
-      <div className="p-8">
-        <p>You must be logged in to see the dashboard.</p>
-        <Link href="/auth/login" className="text-blue-600">Login</Link>
-      </div>
+      <Card className="p-8 max-w-md mx-auto">
+        <h1 className="text-3xl font-bold mb-4 text-zinc-900">Dashboard</h1>
+        <p className="text-zinc-700 mb-4">You must be logged in to view your dashboard.</p>
+        <div className="flex gap-3">
+          <Link
+            href="/auth/login"
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Login
+          </Link>
+          <Link
+            href="/auth/signup"
+            className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            Sign up
+          </Link>
+        </div>
+      </Card>
     );
   }
 
